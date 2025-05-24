@@ -39,22 +39,29 @@ OverseerAgent is a Node.js server that connects to [Claude](https://www.anthropi
    npm start
    ```
 5. **Access the API:**
-   Open your browser and go to `http://localhost:3000`
+   Open your browser and go to `http://localhost::4000`
 
 ## Usage
 
-Send a POST request to `/request` with a JSON body containing your prompt:
+Send a POST request to `/request` with a JSON body containing your prompt.
+
+
 ```json
 {
-  "prompt": "Recommend me some action movies"
+  "prompt": "download season 7 and 8 of lost"
 }
 ```
+
+Some other prompt examples:
+- "download all season of breaking bad"
+- "download Aladdin in hebrew"
+- "download the latest season of solo leveling"
 
 ## Docker Compose / Portainer
 
 You can easily deploy OverseerAgent using Docker Compose, which also works seamlessly with Portainer.
 
-1. **Create a `docker-compose.yml` file:**
+**Add to your Dokcer Compose**
 
    ```yaml
    version: "3.8"
@@ -74,21 +81,8 @@ You can easily deploy OverseerAgent using Docker Compose, which also works seaml
    - Replace the environment variable values with your actual secrets.
    - If you run Overseerr in the same stack, use the service name (`overseerr`) for `OVERSEERR_URL`.
 
-2. **Deploy with Docker Compose:**
-
-   ```sh
-   docker compose up -d
-   ```
-
-3. **Deploy with Portainer:**
-   - Go to **Stacks** in Portainer.
-   - Click **Add stack**.
-   - Paste the above YAML.
-   - Set your environment variables.
-   - Deploy the stack.
-
 Your OverseerAgent API will be available at `http://<your-server>:4000`.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Created by Omer Sher aka Rio.
