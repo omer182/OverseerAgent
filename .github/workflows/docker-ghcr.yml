@@ -27,8 +27,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/overseeragent:latest
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/overseeragent
+        run: |
+          docker buildx build --platform linux/arm64,linux/amd64 -t $IMAGE_NAME:latest --push .
