@@ -162,6 +162,45 @@ app.post("/prompt", async (req, res) => {
     console.log("🎯 Extracted:", intent);
 
     const result = await searchOverseerr(intent.title);
+
+    // Handle already requested/available
+    if (result.mediaInfo && result.mediaInfo.status) {
+      const status = result.mediaInfo.status;
+
+      // Fully available/requested (status 2, 3, etc. - adjust as needed)
+      if (status !== 1 && status !== 4) {
+        return res.status(200).json({
+          status: "already_requested",
+          message: "This media has already been requested or is available.",
+          media: result,
+        });
+      }
+
+      // Partially available (status 4)
+      if (status === 4 && intent.mediaType === "tv" && Array.isArray(intent.seasons)) {
+        // Get available/requested seasons from Overseerr
+        const availableSeasons = (result.mediaInfo.seasons || [])
+          .filter(s => s.status && s.status !== 1) // status 1 = unknown/missing
+          .map(s => s.seasonNumber);
+
+        // Find which requested seasons are NOT available/requested
+        const missingSeasons = intent.seasons.filter(
+          season => !availableSeasons.includes(season)
+        );
+
+        if (missingSeasons.length === 0) {
+          return res.status(200).json({
+            status: "already_requested",
+            message: "All requested seasons are already available or requested.",
+            media: result,
+          });
+        }
+
+        // Only request missing seasons
+        intent.seasons = missingSeasons;
+      }
+    }
+
     if (!result) return res.status(404).json({ error: "Media not found" });
 
     const profileKey = intent.profile?.toLowerCase() || "default";
@@ -177,5 +216,5 @@ app.post("/prompt", async (req, res) => {
 });
 
 app.listen(4000, () => {
-  console.log("🚀 MCP + Claude server running at http://localhost:4000");
+  console.log("🚀 Overseer Agent server running at http://localhost:4000");
 });
