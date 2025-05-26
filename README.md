@@ -1,11 +1,11 @@
 # Overseer Agent
 
-OverseerAgent is a Node.js server that connects to [Claude](https://www.anthropic.com/) for natural language understanding and integrates with [Overseerr](https://overseerr.dev/) to request your favorite movies or TV shows using simple prompts.
+OverseerAgent is a Node.js server that uses AI for natural language understanding and integrates with [Overseerr](https://overseerr.dev/) to request your favorite movies or TV shows using simple prompts.
 
 ## Features
 
 - Accepts natural language prompts to request movies or TV shows
-- Uses Claude AI to extract intent and media details
+- Uses configurable AI models (Google Gemini, Anthropic Claude) to extract intent and media details
 - Searches and requests media via Overseerr API
 - Supports custom profiles (e.g., Hebrew content)
 - Docker-ready and easy to deploy
@@ -14,7 +14,9 @@ OverseerAgent is a Node.js server that connects to [Claude](https://www.anthropi
 
 - Node.js 20+
 - Access to [Overseerr](https://overseerr.dev/) instance and API key
-- Access to [Anthropic Claude API](https://docs.anthropic.com/claude/reference/getting-started) and API key
+- Access to a supported AI provider:
+  - [Google Gemini API](https://ai.google.dev/) (e.g., Gemini 2.5 Pro)
+  - [Anthropic Claude API](https://docs.anthropic.com/claude/reference/getting-started) (specifically Claude 3.7 Sonnet when `LLM_PROVIDER=anthropic`)
 
 ## Setup
 
@@ -29,8 +31,19 @@ OverseerAgent is a Node.js server that connects to [Claude](https://www.anthropi
    ```
 3. **Configure environment variables:**
    Create a `.env` file and update the values:
+   
+   **For Google Gemini (recommended):**
    ```env
-   CLAUDE_API_KEY=your_anthropic_api_key
+   LLM_PROVIDER=gemini
+   GEMINI_API_KEY=your_gemini_api_key
+   OVERSEERR_API_KEY=your_overseerr_api_key
+   OVERSEERR_URL=http://your_overseerr_instance
+   ```
+   
+   **For Anthropic Claude (uses Claude 3.7 Sonnet):**
+   ```env
+   LLM_PROVIDER=anthropic
+   ANTHROPIC_API_KEY=your_gemini_api_key
    OVERSEERR_API_KEY=your_overseerr_api_key
    OVERSEERR_URL=http://your_overseerr_instance
    ```
@@ -43,7 +56,7 @@ OverseerAgent is a Node.js server that connects to [Claude](https://www.anthropi
 
 ## Usage
 
-Send a POST request to `/request` with a JSON body containing your prompt.
+Send a POST request to `/prompt` with a JSON body containing your prompt.
 
 
 ```json
@@ -61,20 +74,26 @@ Some other prompt examples:
 
 You can easily deploy OverseerAgent using Docker Compose, which also works seamlessly with Portainer.
 
-**Add to your Dokcer Compose**
+**Add to your Docker Compose**
 
    ```yaml
    version: "3.8"
    services:
      overseeragent:
-       image: ghcr.io/omer182/overseeragent:latest
+       image: ghcr.io/omer182/overseeragent:latest # Or your custom built image
        container_name: overseeragent
        ports:
          - 4000:4000
        environment:
-         - OVERSEERR_URL=http://overseerr:5055
+         - OVERSEERR_URL=http://overseerr:5055 # Example: if overseerr is in the same stack
          - OVERSEERR_API_KEY=your_overseerr_api_key
-         - ANTHROPIC_API_KEY=your_anthropic_api_key
+         # Choose ONE LLM Provider below and uncomment the relevant lines
+         # For Google Gemini (recommended)
+         - LLM_PROVIDER=gemini 
+         - GEMINI_API_KEY=your_gemini_api_key
+         # For Anthropic Claude (uses Claude 3.7 Sonnet)
+         # - LLM_PROVIDER=anthropic
+         # - ANTHROPIC_API_KEY=your_anthropic_api_key 
        restart: unless-stopped
    ```
 
