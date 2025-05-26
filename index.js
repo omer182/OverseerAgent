@@ -172,8 +172,7 @@ app.post("/prompt", async (req, res) => {
         console.log("✅ Media already available/requested");
         return res.status(200).json({
           status: "already_requested",
-          message: "This media has already been requested or is available.",
-          media: result,
+          message: "This media has already been requested or is available."
         });
       }
 
@@ -193,8 +192,7 @@ app.post("/prompt", async (req, res) => {
           console.log("✅ All requested seasons are already available/requested");
           return res.status(200).json({
             status: "already_requested",
-            message: "All requested seasons are already available or requested.",
-            media: result,
+            message: "All requested seasons are already available or requested."
           });
         }
 
@@ -210,7 +208,7 @@ app.post("/prompt", async (req, res) => {
 
     const requested = await requestMedia(intent, result.id, profileConfig);
     console.log("📥 Media requested successfully:", requested);
-    res.json({ status: "success", media: result, request: requested });
+    res.json({ status: "success", intent });
   } catch (err) {
     console.error("❌ MCP Error:", err.message);
     res.status(500).json({ error: "Server failed to process prompt" });
