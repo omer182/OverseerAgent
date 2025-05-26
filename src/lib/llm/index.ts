@@ -1,5 +1,6 @@
 import GeminiProvider from './GeminiProvider.js';
 import AnthropicProvider from './AnthropicProvider.js';
+import ModelProvider, { MediaIntent } from './ModelProvider.js';
 
 /**
  * Factory function to create the appropriate LLM provider based on configuration
@@ -8,7 +9,7 @@ import AnthropicProvider from './AnthropicProvider.js';
  * @returns {ModelProvider} - An instance of the appropriate provider
  * @throws {Error} - If the provider is unsupported or configuration is invalid
  */
-export function createProvider(provider, apiKey) {
+export function createProvider(provider: string, apiKey: string): ModelProvider {
   if (!provider) {
     throw new Error("LLM_PROVIDER environment variable is required");
   }
@@ -33,15 +34,19 @@ export function createProvider(provider, apiKey) {
  * Main function to invoke chat model for media intent extraction
  * Uses the configured LLM provider from environment variables
  * @param {string} userPrompt - The user's input prompt
- * @returns {Promise<Object>} - Parsed JSON response containing media intent
+ * @returns {Promise<MediaIntent>} - Parsed JSON response containing media intent
  * @throws {Error} - If the LLM call fails or configuration is invalid
  */
-export async function invokeChatModel(userPrompt) {
-  const providerName = process.env.LLM_PROVIDER.toLowerCase();
-  let apiKey;
+export async function invokeChatModel(userPrompt: string): Promise<MediaIntent> {
+  const providerName = process.env.LLM_PROVIDER?.toLowerCase();
+  let apiKey: string | undefined;
+
+  if (!providerName) {
+    throw new Error("LLM_PROVIDER environment variable is not set or is empty.");
+  }
 
   // Get the appropriate API key based on providerName
-  // LLM_PROVIDER and corresponding API key are validated at startup by validateLLMConfig in index.js
+  // LLM_PROVIDER and corresponding API key are validated at startup by validateLLMConfig in index.ts
   if (providerName === 'gemini') {
     apiKey = process.env.GEMINI_API_KEY;
   } else if (providerName === 'anthropic') {
@@ -49,11 +54,16 @@ export async function invokeChatModel(userPrompt) {
   }
   // No default case needed here as startup validation ensures providerName is valid and key exists.
 
+  if (!apiKey) {
+    // This check is technically redundant if validateLLMConfig has run, but good for safety.
+    throw new Error(`API key for provider ${providerName} is not defined. Please check your environment variables.`);
+  }
+
   const providerInstance = createProvider(providerName, apiKey);
   
   try {
     return await providerInstance.generateResponse(userPrompt);
-  } catch (err) {
+  } catch (err: any) {
     console.error(`❌ Error in invokeChatModel with ${providerName} provider:`, err.message);
     // Re-throw the original error to preserve its type and details for upstream handlers
     throw err; 
@@ -64,7 +74,7 @@ export async function invokeChatModel(userPrompt) {
  * Validate LLM configuration at startup
  * @throws {Error} - If configuration is invalid or missing
  */
-export function validateLLMConfig() {
+export function validateLLMConfig(): void {
   const provider = process.env.LLM_PROVIDER;
   const supportedProviders = ['gemini', 'anthropic'];
 
@@ -95,8 +105,12 @@ export function validateLLMConfig() {
   }
 }
 
+// Optional: If you want to keep the default export structure for some reason,
+// otherwise, named exports are generally preferred in TypeScript.
+/* 
 export default {
   invokeChatModel,
   validateLLMConfig,
   createProvider
 }; 
+*/ 

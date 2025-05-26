@@ -1,14 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk';
-import ModelProvider from './ModelProvider.js';
+import ModelProvider, { MediaIntent } from './ModelProvider.js';
+import { Tool, ToolUseBlock } from '@anthropic-ai/sdk/resources/messages.mjs';
 
 /**
  * Anthropic Claude provider implementation
  */
 class AnthropicProvider extends ModelProvider {
-  constructor(apiKey) {
+  private anthropic: Anthropic;
+  private modelName: string;
+
+  constructor(apiKey: string) {
     super(apiKey);
-    this.anthropic = new Anthropic({ apiKey: this.apiKey });
-    this.modelName = 'claude-3-7-sonnet-20250219'; // Official model ID for Claude 3.7 Sonnet. Ensure this is up-to-date.
+    if (!apiKey) {
+      throw new Error("Anthropic API key is required.");
+    }
+    this.anthropic = new Anthropic({ apiKey });
+    this.modelName = 'claude-3-sonnet-20240229'; // Updated to a generally available Sonnet model
   }
 
   /**
@@ -16,7 +23,7 @@ class AnthropicProvider extends ModelProvider {
    * This prompt guides the model to use the specified tool for JSON output.
    * @returns {string} - The system prompt optimized for Anthropic Claude.
    */
-  getSystemPrompt() {
+  getSystemPrompt(): string {
     const basePrompt = super.getSystemPrompt(); // Gets the JSON structure and examples
     return `You are a media request assistant. Your task is to analyze the user's request and extract specific details about the media they want.
 You MUST use the "media_intent_extractor" tool to provide these details in a structured JSON format.
@@ -28,13 +35,13 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
    * Generate a response from Anthropic Claude for media intent extraction.
    * Uses Anthropic's tool feature to enforce structured JSON output.
    * @param {string} userPrompt - The user's input prompt.
-   * @returns {Promise<Object>} - Parsed JSON response containing media intent.
+   * @returns {Promise<MediaIntent>} - Parsed JSON response containing media intent.
    * @throws {Error} - If the API call fails or response cannot be parsed.
    */
-  async generateResponse(userPrompt) {
+  async generateResponse(userPrompt: string): Promise<MediaIntent> {
     const systemPrompt = this.getSystemPrompt();
 
-    const tools = [{
+    const tools: Tool[] = [{
       name: "media_intent_extractor",
       description: "Extracts media intent details (title, media type, seasons, profile) from a user's request and returns it in JSON format.",
       input_schema: {
@@ -67,7 +74,7 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
     }];
 
     const messages = [
-      { role: 'user', content: userPrompt }
+      { role: 'user' as const, content: userPrompt } // Added 'as const' for role
     ];
 
     try {
@@ -82,18 +89,18 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
         tool_choice: { type: "tool", name: "media_intent_extractor" }
       });
 
-      console.log("Anthropic API raw response:", JSON.stringify(response, null, 2));
+      // console.log("Anthropic API raw response:", JSON.stringify(response, null, 2));
 
       if (!response.content || response.content.length === 0) {
         throw new Error("Empty content in response from Anthropic API");
       }
 
-      const toolUseBlock = response.content.find(block => block.type === 'tool_use');
+      const toolUseBlock = response.content.find(block => block.type === 'tool_use') as ToolUseBlock | undefined;
 
       if (!toolUseBlock || !toolUseBlock.input) {
         // If no tool use, check if there's a text response (e.g. refusal)
         const textBlock = response.content.find(block => block.type === 'text');
-        if (textBlock && textBlock.text) {
+        if (textBlock && textBlock.type === 'text' && textBlock.text) { // Added type check for textBlock
             throw new Error(`Anthropic API did not use the tool as expected. Response: ${textBlock.text}`);
         }
         throw new Error("Anthropic API response did not include the expected tool_use block or input.");
@@ -104,9 +111,11 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
       // The input to the tool is already a JS object if the API call was successful
       // and the model used the tool correctly. We just need to validate its structure.
       console.log("Anthropic response (extracted from tool input):", responseJson);
-      return this.validateResponse(JSON.stringify(responseJson)); // validateResponse expects a string
+      // ValidateResponse expects a string, so we stringify the object.
+      // The MediaIntent interface will be enforced by validateResponse.
+      return super.validateResponse(JSON.stringify(responseJson)); 
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Error calling Anthropic API:", err);
       if (err instanceof Anthropic.APIError) {
         let userMessage = `Anthropic API Error: ${err.status} - ${err.name}.`;
@@ -116,8 +125,8 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
           userMessage = "Anthropic API key does not have permission for the requested action or model.";
         } else if (err.status === 429) {
           userMessage = "Anthropic API rate limit exceeded or quota overage. Please check your usage and limits, or try again later.";
-        } else if (err.message.includes('claude-3-7-sonnet-20250219')) {
-            userMessage += " This might also indicate an issue with model access or the model ID being incorrect/not available to your key."
+        } else if (err.message.includes(this.modelName)) { // Check against dynamic modelName
+            userMessage += ` This might also indicate an issue with model access or the model ID '${this.modelName}' being incorrect/not available to your key.`
         }
         throw new Error(userMessage);
       }

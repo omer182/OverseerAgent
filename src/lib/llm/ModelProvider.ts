@@ -2,8 +2,18 @@
  * Base class for LLM providers
  * Defines the interface that all LLM providers must implement
  */
+
+export interface MediaIntent {
+  title: string;
+  mediaType: "movie" | "tv";
+  seasons?: "all" | number[];
+  profile?: "heb" | null;
+}
+
 class ModelProvider {
-  constructor(apiKey) {
+  protected apiKey: string | undefined;
+
+  constructor(apiKey?: string) {
     if (this.constructor === ModelProvider) {
       throw new Error("ModelProvider is an abstract class and cannot be instantiated directly");
     }
@@ -13,10 +23,10 @@ class ModelProvider {
   /**
    * Generate a response from the LLM for media intent extraction
    * @param {string} userPrompt - The user's input prompt
-   * @returns {Promise<Object>} - Parsed JSON response containing media intent
+   * @returns {Promise<MediaIntent>} - Parsed JSON response containing media intent
    * @throws {Error} - If the API call fails or response cannot be parsed
    */
-  async generateResponse(userPrompt) {
+  async generateResponse(userPrompt: string): Promise<MediaIntent> {
     throw new Error("generateResponse method must be implemented by subclass");
   }
 
@@ -25,7 +35,7 @@ class ModelProvider {
    * Each provider can customize this for optimal performance
    * @returns {string} - The system prompt
    */
-  getSystemPrompt() {
+  getSystemPrompt(): string {
     return `You're an assistant that extracts media request information from user prompts.
 
 Analyze the prompt and return a JSON object with the following structure:
@@ -45,14 +55,14 @@ Examples:
   /**
    * Validate that the response is a valid JSON object with expected structure
    * @param {string} responseText - Raw response text from LLM
-   * @returns {Object} - Validated and parsed JSON object
+   * @returns {MediaIntent} - Validated and parsed JSON object
    * @throws {Error} - If response is invalid or missing required fields
    */
-  validateResponse(responseText) {
-    let parsed;
+  validateResponse(responseText: string): MediaIntent {
+    let parsed: any;
     try {
       parsed = JSON.parse(responseText.trim());
-    } catch (err) {
+    } catch (err: any) {
       throw new Error(`Invalid JSON response from LLM: ${err.message}`);
     }
 
@@ -64,8 +74,22 @@ Examples:
     if (!["movie", "tv"].includes(parsed.mediaType)) {
       throw new Error("Invalid mediaType: must be 'movie' or 'tv'");
     }
+    
+    // Ensure seasons is valid if present
+    if (parsed.seasons && parsed.mediaType === "movie") {
+        throw new Error("Seasons should not be specified for mediaType 'movie'")
+    }
 
-    return parsed;
+    if (parsed.seasons && parsed.mediaType === "tv" && !(parsed.seasons === "all" || (Array.isArray(parsed.seasons) && parsed.seasons.every((s: any) => typeof s === "number")))) {
+        throw new Error("Invalid seasons format for mediaType 'tv'. Should be 'all' or an array of numbers.");
+    }
+
+    // Ensure profile is valid if present
+    if (parsed.profile && parsed.profile !== "heb") {
+        throw new Error("Invalid profile value. Should be 'heb' or null/undefined.");
+    }
+
+    return parsed as MediaIntent;
   }
 }
 
