@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js --require dotenv/config",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.json",
     "dev": "nodemon src/index.ts --require dotenv/config --exec ts-node"
   },
   "dependencies": {

@@ -24,7 +24,24 @@ app.route("/api", promptRoutes); // Prefix all prompt routes with /api
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 console.log(`🚀 Overseer Agent server running at http://localhost:${port}`);
 
-serve({
+const server = serve({
   fetch: app.fetch,
   port: port,
+});
+
+// Handle graceful shutdown on SIGTERM and SIGINT
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
 });
