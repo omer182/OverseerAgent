@@ -11,11 +11,11 @@ if (!OVERSEERR_URL || !OVERSEERR_API_KEY) {
 }
 
 export interface ProfileConfig {
-  profileId: number;
-  movieRootFolder: string;
-  tvRootFolder: string;
-  languageProfileId: number;
-  tags: number[];
+  profileId?: number;
+  movieRootFolder?: string;
+  tvRootFolder?: string;
+  languageProfileId?: number;
+  tags?: number[];
 }
 
 export interface ProfileMap {
@@ -24,19 +24,9 @@ export interface ProfileMap {
 
 export const profileMap: ProfileMap = {
   heb: {
-    profileId: 7,
-    // TODO: is this really needed?
-    movieRootFolder: "/media/movies",
-    tvRootFolder: "/media/tv",
-    languageProfileId: 2,
     tags: [10],
   },
   default: {
-    profileId: 6,
-    // TODO: is this really needed?
-    movieRootFolder: "/movies",
-    tvRootFolder: "/tv",
-    languageProfileId: 1,
     tags: [],
   },
 }; 
