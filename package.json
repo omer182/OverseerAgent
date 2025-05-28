@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/index.js --require dotenv/config",
     "build": "tsc --project tsconfig.json",
-    "dev": "nodemon src/index.ts --require dotenv/config --exec ts-node"
+    "dev": "nodemon"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.22.0",
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
 }

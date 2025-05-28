@@ -13,9 +13,9 @@ if (!OVERSEERR_URL || !OVERSEERR_API_KEY) {
 export interface ProfileConfig {
   profileId?: number;
   movieRootFolder?: string;
+  is4k?: boolean;
   tvRootFolder?: string;
-  languageProfileId?: number;
-  tags?: number[];
+  languageProfileId: number;
 }
 
 export interface ProfileMap {
@@ -23,10 +23,7 @@ export interface ProfileMap {
 }
 
 export const profileMap: ProfileMap = {
-  heb: {
-    tags: [10],
-  },
   default: {
-    tags: [],
+    languageProfileId: 1,
   },
 }; 
