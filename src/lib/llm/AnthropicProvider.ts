@@ -15,7 +15,7 @@ class AnthropicProvider extends ModelProvider {
       throw new Error("Anthropic API key is required.");
     }
     this.anthropic = new Anthropic({ apiKey });
-    this.modelName = 'claude-3-sonnet-20240229'; // Updated to a generally available Sonnet model
+    this.modelName = 'claude-3-7-sonnet-20250219'; // Updated to a generally available Sonnet model
   }
 
   /**
