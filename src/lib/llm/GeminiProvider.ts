@@ -14,7 +14,7 @@ class GeminiProvider extends ModelProvider {
       throw new Error("Gemini API key is required.");
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }); // Updated model name
+    this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" }); // Updated model name
   }
 
   /**
