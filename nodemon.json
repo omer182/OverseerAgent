@@ -1,0 +1,8 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": ["src/**/*.spec.ts", "node_modules"],
+  "exec": "npx tsx --require dotenv/config src/index.ts",
+  "restartable": "rs",
+  "delay": 500
+} 
