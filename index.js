@@ -120,13 +120,23 @@ app.post("/prompt", async (req, res) => {
     const { prompt } = req.body;
 
     if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
+      return res.status(400).send("Please provide a prompt to request a movie or TV show.");
     }
 
     const intent = await extractMediaIntent(prompt);
     console.log("🎯 Extracted:", intent);
 
     const result = await searchOverseerr(intent.title);
+
+    // Helper to format seasons
+    function formatSeasons(seasons) {
+      if (seasons === "all") return "all seasons";
+      if (Array.isArray(seasons)) {
+        if (seasons.length === 1) return `season ${seasons[0]}`;
+        return `seasons ${seasons.slice(0, -1).join(", ")} and ${seasons[seasons.length - 1]}`;
+      }
+      return "season 1";
+    }
 
     // Handle already requested/available
     if (result.mediaInfo && result.mediaInfo.status) {
@@ -135,10 +145,7 @@ app.post("/prompt", async (req, res) => {
       // Fully available/requested (status 2, 3, etc. - adjust as needed)
       if (status !== 1 && status !== 4) {
         console.log("✅ Media already available/requested");
-        return res.status(200).json({
-          status: "already_requested",
-          message: "This media has already been requested or is available."
-        });
+        return res.status(200).send(`"${intent.title}" is already available or has already been requested.`);
       }
 
       // Partially available (status 4)
@@ -155,10 +162,7 @@ app.post("/prompt", async (req, res) => {
 
         if (missingSeasons.length === 0) {
           console.log("✅ All requested seasons are already available/requested");
-          return res.status(200).json({
-            status: "already_requested",
-            message: "All requested seasons are already available or requested."
-          });
+          return res.status(200).send(`All requested seasons of \"${intent.title}\" are already available or requested.`);
         }
 
         // Only request missing seasons
@@ -166,17 +170,24 @@ app.post("/prompt", async (req, res) => {
       }
     }
 
-    if (!result) return res.status(404).json({ error: "Media not found" });
+    if (!result) return res.status(404).send("Sorry, I couldn't find that media.");
 
     const profileKey = intent.profile?.toLowerCase() || "default";
     const profileConfig = profileMap[profileKey] || profileMap.default;
 
     const requested = await requestMedia(intent, result.id, profileConfig);
     console.log("📥 Media requested successfully:", requested);
-    res.json({ status: "success", intent });
+
+    let message = "";
+    if (intent.mediaType === "tv") {
+      message = `Your request for \"${intent.title}\" (${formatSeasons(intent.seasons)}) has been submitted successfully!`;
+    } else {
+      message = `Your request for the movie \"${intent.title}\" has been submitted successfully!`;
+    }
+    res.send(message);
   } catch (err) {
     console.error("❌ MCP Error:", err.message);
-    res.status(500).json({ error: "Server failed to process prompt" });
+    res.status(500).send("Sorry, something went wrong while processing your request.");
   }
 });
 
