@@ -115,6 +115,17 @@ async function requestMedia(intent, mediaId) {
   }
 }
 
+// Helper to format seasons
+function formatSeasons(seasons) {
+  if (seasons === "all") return "all seasons";
+  if (Array.isArray(seasons)) {
+    if (seasons.length === 1) return `season ${seasons[0]}`;
+    return `seasons ${seasons.slice(0, -1).join(", ")} and ${seasons[seasons.length - 1]}`;
+  }
+  return "season 1";
+}
+
+
 app.post("/prompt", async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -127,16 +138,6 @@ app.post("/prompt", async (req, res) => {
     console.log("🎯 Extracted:", intent);
 
     const result = await searchOverseerr(intent.title);
-
-    // Helper to format seasons
-    function formatSeasons(seasons) {
-      if (seasons === "all") return "all seasons";
-      if (Array.isArray(seasons)) {
-        if (seasons.length === 1) return `season ${seasons[0]}`;
-        return `seasons ${seasons.slice(0, -1).join(", ")} and ${seasons[seasons.length - 1]}`;
-      }
-      return "season 1";
-    }
 
     // Handle already requested/available
     if (result.mediaInfo && result.mediaInfo.status) {
@@ -162,7 +163,7 @@ app.post("/prompt", async (req, res) => {
 
         if (missingSeasons.length === 0) {
           console.log("✅ All requested seasons are already available/requested");
-          return res.status(200).send(`All requested seasons of \"${intent.title}\" are already available or requested.`);
+          return res.status(200).send(`All requested seasons of "${intent.title}" are already available or requested.`);
         }
 
         // Only request missing seasons
@@ -180,9 +181,9 @@ app.post("/prompt", async (req, res) => {
 
     let message = "";
     if (intent.mediaType === "tv") {
-      message = `Your request for \"${intent.title}\" (${formatSeasons(intent.seasons)}) has been submitted successfully!`;
+      message = `Your request for "${intent.title}" (${formatSeasons(intent.seasons)}) has been submitted successfully!`;
     } else {
-      message = `Your request for the movie \"${intent.title}\" has been submitted successfully!`;
+      message = `Your request for the movie "${intent.title}" has been submitted successfully!`;
     }
     res.send(message);
   } catch (err) {
