@@ -2,6 +2,7 @@ import express, { json } from "express";
 import axios from 'axios';
 import cors from "cors";
 import dotenv from "dotenv";
+import { validateLLMConfig, invokeChatModel } from "./lib/llm/index.js";
 dotenv.config();
 
 const app = express();
@@ -10,10 +11,17 @@ app.use(json());
 
 const OVERSEERR_URL = process.env.OVERSEERR_URL;
 const OVERSEERR_API_KEY = process.env.OVERSEERR_API_KEY;
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-if (!OVERSEERR_URL || !OVERSEERR_API_KEY || !ANTHROPIC_API_KEY) {
-  console.error("❌ Missing required environment variables.");
+if (!OVERSEERR_URL || !OVERSEERR_API_KEY) {
+  console.error("❌ Missing required environment variables: OVERSEERR_URL, OVERSEERR_API_KEY");
+  process.exit(1);
+}
+
+// Validate LLM configuration
+try {
+  validateLLMConfig();
+} catch (err) {
+  console.error(err.message);
   process.exit(1);
 }
 
@@ -38,51 +46,8 @@ const profileMap = {
 };
 
 async function extractMediaIntent(prompt) {
-  const system = `You're an assistant that extracts media request information from user prompts.
-
-Analyze the prompt and return a JSON object with the following structure:
-{
-  "title": "exact title of the movie/show",
-  "mediaType": "movie" or "tv",
-  "seasons": "all" or [1,2,3] (array of season numbers, only for TV shows),
-  "profile": "heb" or null (if Hebrew content is requested)
-}
-
-Examples:
-- "I want to watch Breaking Bad season 1" → {"title": "Breaking Bad", "mediaType": "tv", "seasons": [1]}
-- "Add all seasons of Friends" → {"title": "Friends", "mediaType": "tv", "seasons": "all"}
-- "I need the Hebrew movie Lebanon" → {"title": "Lebanon", "mediaType": "movie", "profile": "heb"}`;
-
-
-  const body = {
-    model: "claude-3-7-sonnet-20250219",
-    max_tokens: 100,
-    temperature: 0,
-    system,
-    messages: [
-      { role: "user", content: `Prompt: "${prompt}"\nRespond with JSON only.` },
-    ],
-  };
-
   try {
-    const res = await axios.post("https://api.anthropic.com/v1/messages", body, {
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-    });
-
-    console.log("Claude response:", res.data.content[0].text);
-
-
-    if (!res.data || !res.data.content || !res.data.content[0]?.text) {
-      throw new Error("Invalid response from Anthropic API");
-    }
-
-    
-    const jsonText = res.data.content[0].text.trim();
-    return JSON.parse(jsonText);
+    return await invokeChatModel(prompt);
   } catch (err) {
     console.error("❌ Error extracting media intent:", err);
     throw new Error("Failed to extract media intent");
@@ -150,6 +115,17 @@ async function requestMedia(intent, mediaId) {
   }
 }
 
+// Helper to format seasons
+function formatSeasons(seasons) {
+  if (seasons === "all") return "all seasons";
+  if (Array.isArray(seasons)) {
+    if (seasons.length === 1) return `season ${seasons[0]}`;
+    return `seasons ${seasons.slice(0, -1).join(", ")} and ${seasons[seasons.length - 1]}`;
+  }
+  return "season 1";
+}
+
+
 app.post("/prompt", async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -162,16 +138,6 @@ app.post("/prompt", async (req, res) => {
     console.log("🎯 Extracted:", intent);
 
     const result = await searchOverseerr(intent.title);
-
-    // Helper to format seasons
-    function formatSeasons(seasons) {
-      if (seasons === "all") return "all seasons";
-      if (Array.isArray(seasons)) {
-        if (seasons.length === 1) return `season ${seasons[0]}`;
-        return `seasons ${seasons.slice(0, -1).join(", ")} and ${seasons[seasons.length - 1]}`;
-      }
-      return "season 1";
-    }
 
     // Handle already requested/available
     if (result.mediaInfo && result.mediaInfo.status) {
@@ -197,7 +163,7 @@ app.post("/prompt", async (req, res) => {
 
         if (missingSeasons.length === 0) {
           console.log("✅ All requested seasons are already available/requested");
-          return res.status(200).send(`All requested seasons of \"${intent.title}\" are already available or requested.`);
+          return res.status(200).send(`All requested seasons of "${intent.title}" are already available or requested.`);
         }
 
         // Only request missing seasons
@@ -215,9 +181,9 @@ app.post("/prompt", async (req, res) => {
 
     let message = "";
     if (intent.mediaType === "tv") {
-      message = `Your request for \"${intent.title}\" (${formatSeasons(intent.seasons)}) has been submitted successfully!`;
+      message = `Your request for "${intent.title}" (${formatSeasons(intent.seasons)}) has been submitted successfully!`;
     } else {
-      message = `Your request for the movie \"${intent.title}\" has been submitted successfully!`;
+      message = `Your request for the movie "${intent.title}" has been submitted successfully!`;
     }
     res.send(message);
   } catch (err) {
