@@ -22,11 +22,11 @@ class ModelProvider {
 
   /**
    * Generate a response from the LLM for media intent extraction
-   * @param {string} userPrompt - The user's input prompt
+   * @param {string} prompt - The user's input prompt
    * @returns {Promise<MediaIntent>} - Parsed JSON response containing media intent
    * @throws {Error} - If the API call fails or response cannot be parsed
    */
-  async generateResponse(userPrompt: string): Promise<MediaIntent> {
+  async generateResponse(_userPrompt: string): Promise<MediaIntent> {
     throw new Error("generateResponse method must be implemented by subclass");
   }
 
@@ -59,11 +59,11 @@ Examples:
    * @throws {Error} - If response is invalid or missing required fields
    */
   validateResponse(responseText: string): MediaIntent {
-    let parsed: any;
+    let parsed: MediaIntent;
     try {
       parsed = JSON.parse(responseText.trim());
-    } catch (err: any) {
-      throw new Error(`Invalid JSON response from LLM: ${err.message}`);
+    } catch (err: unknown) {
+      throw new Error(`Invalid JSON response from LLM: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     // Validate required fields
@@ -71,7 +71,7 @@ Examples:
       throw new Error("Response missing required fields: title and mediaType");
     }
 
-    if (!["movie", "tv"].includes(parsed.mediaType)) {
+    if (!["movie", "tv"].includes(parsed.mediaType as string)) {
       throw new Error("Invalid mediaType: must be 'movie' or 'tv'");
     }
     
@@ -80,7 +80,7 @@ Examples:
         throw new Error("Seasons should not be specified for mediaType 'movie'")
     }
 
-    if (parsed.seasons && parsed.mediaType === "tv" && !(parsed.seasons === "all" || (Array.isArray(parsed.seasons) && parsed.seasons.every((s: any) => typeof s === "number")))) {
+    if (parsed.seasons && parsed.mediaType === "tv" && !(parsed.seasons === "all" || (Array.isArray(parsed.seasons) && parsed.seasons.every((s: number) => typeof s === "number")))) {
         throw new Error("Invalid seasons format for mediaType 'tv'. Should be 'all' or an array of numbers.");
     }
 
@@ -89,7 +89,8 @@ Examples:
         throw new Error("Invalid profile value. Should be 'heb' or null/undefined.");
     }
 
-    return parsed as MediaIntent;
+    // After validation, we know the parsed object conforms to MediaIntent
+    return parsed;
   }
 }
 

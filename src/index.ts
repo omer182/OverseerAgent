@@ -13,8 +13,8 @@ app.use('*', cors()); // Enable CORS for all routes
 // Validate LLM configuration
 try {
   validateLLMConfig();
-} catch (err: any) {
-  console.error("Error validating LLM config:", err.message);
+} catch (err: unknown) {
+  console.error("Error validating LLM config:", err instanceof Error ? err.message : String(err));
   process.exit(1);
 }
 

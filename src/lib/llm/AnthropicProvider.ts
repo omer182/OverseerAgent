@@ -115,7 +115,7 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
       // The MediaIntent interface will be enforced by validateResponse.
       return super.validateResponse(JSON.stringify(responseJson)); 
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("❌ Error calling Anthropic API:", err);
       if (err instanceof Anthropic.APIError) {
         let userMessage = `Anthropic API Error: ${err.status} - ${err.name}.`;
@@ -130,7 +130,7 @@ ${basePrompt}`; // Append JSON structure and examples for clarity
         }
         throw new Error(userMessage);
       }
-      throw new Error(`Failed to generate response from Anthropic: ${err.message}`);
+      throw new Error(`Failed to generate response from Anthropic: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }

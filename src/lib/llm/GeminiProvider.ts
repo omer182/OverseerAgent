@@ -66,19 +66,21 @@ class GeminiProvider extends ModelProvider {
       // Validate and return the parsed response
       return super.validateResponse(responseText);
 
-    } catch (err: any) {
-      console.error("❌ Error calling Gemini API:", err.message);
+    } catch (err: unknown) {
+      console.error("❌ Error calling Gemini API:", err instanceof Error ? err.message : String(err));
       
       // Handle specific Gemini API errors
-      if (err.message.includes('API_KEY_INVALID')) {
-        throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.");
-      } else if (err.message.includes('QUOTA_EXCEEDED')) {
-        throw new Error("Gemini API quota exceeded. Please check your usage limits.");
-      } else if (err.message.includes('RATE_LIMIT_EXCEEDED')) {
-        throw new Error("Gemini API rate limit exceeded. Please try again later.");
+      if (err instanceof Error) {
+        if (err.message.includes('API_KEY_INVALID')) {
+          throw new Error("Invalid Gemini API key. Please check your GEMINI_API_KEY environment variable.");
+        } else if (err.message.includes('QUOTA_EXCEEDED')) {
+          throw new Error("Gemini API quota exceeded. Please check your usage limits.");
+        } else if (err.message.includes('RATE_LIMIT_EXCEEDED')) {
+          throw new Error("Gemini API rate limit exceeded. Please try again later.");
+        }
       }
       
-      throw new Error(`Failed to generate response from Gemini: ${err.message}`);
+      throw new Error(`Failed to generate response from Gemini: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }

@@ -10,8 +10,8 @@ export interface MediaIntent {
 export async function extractMediaIntent(prompt: string): Promise<MediaIntent> {
   try {
     return await invokeChatModel(prompt);
-  } catch (err: any) {
-    console.error("❌ Error extracting media intent:", err);
+  } catch (err: unknown) {
+    console.error("❌ Error extracting media intent:", err instanceof Error ? err.message : String(err));
     throw new Error("Failed to extract media intent");
   }
 } 

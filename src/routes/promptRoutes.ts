@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { MediaIntent, extractMediaIntent } from '../services/mediaIntentService.js';
-import { searchOverseerr, requestMedia, OverseerrSearchResult } from '../services/overseerrService.js';
+import { searchOverseerr, requestMedia } from '../services/overseerrService.js';
 
 const router = new Hono();
 
@@ -12,7 +12,7 @@ router.post("/prompt", async (c) => {
       return c.json({ error: "Prompt is required" }, 400);
     }
 
-    let intent: MediaIntent = await extractMediaIntent(prompt);
+    const intent: MediaIntent = await extractMediaIntent(prompt);
     console.log("🎯 Extracted:", intent);
 
     const result = await searchOverseerr(intent.title);
@@ -57,11 +57,15 @@ router.post("/prompt", async (c) => {
     const requested = await requestMedia(intent, result.id);
     console.log("📥 Media requested successfully:", requested);
     return c.json({ status: "success", intent });
-  } catch (err: any) {
-    console.error("❌ Prompt Route Error:", err.message);
+  } catch (err: unknown) {
+    console.error("❌ Prompt Route Error:", err instanceof Error ? err.message : String(err));
     // Check if the error is from one of our services and rethrow if it's a specific message
-    if (err.message === "Failed to extract media intent" || err.message === "Failed to search Overseerr" || err.message === "Failed to request media") {
+    if (err instanceof Error) {
+      if (err.message === "Failed to extract media intent" || 
+          err.message === "Failed to search Overseerr" || 
+          err.message === "Failed to request media") {
         return c.json({ error: err.message }, 500); 
+      }
     }
     return c.json({ error: "Server failed to process prompt" }, 500);
   }

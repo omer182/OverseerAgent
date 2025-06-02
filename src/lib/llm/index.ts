@@ -63,8 +63,8 @@ export async function invokeChatModel(userPrompt: string): Promise<MediaIntent> 
   
   try {
     return await providerInstance.generateResponse(userPrompt);
-  } catch (err: any) {
-    console.error(`❌ Error in invokeChatModel with ${providerName} provider:`, err.message);
+  } catch (err: unknown) {
+    console.error(`❌ Error in invokeChatModel with ${providerName} provider:`, err instanceof Error ? err.message : String(err));
     // Re-throw the original error to preserve its type and details for upstream handlers
     throw err; 
   }

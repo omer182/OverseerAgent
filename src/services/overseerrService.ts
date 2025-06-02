@@ -23,18 +23,20 @@ export async function searchOverseerr(title: string): Promise<OverseerrSearchRes
       headers: overseerrHeaders,
     });
     return res.data.results[0] as OverseerrSearchResult | undefined;
-  } catch (err: any) {
-    console.error("❌ Error searching Overseerr:", err);
+  } catch (err: unknown) {
+    console.error("❌ Error searching Overseerr:", err instanceof Error ? err.message : String(err));
     throw new Error("Failed to search Overseerr");
   }
 }
 
-export async function requestMedia(intent: MediaIntent, mediaId: number): Promise<any> {
+export async function requestMedia(intent: MediaIntent, mediaId: number): Promise<unknown> {
   const mediaType = intent.mediaType;
   const profileKey = intent.profile === "heb" ? "heb" : "default";
   const selectedProfile: ProfileConfig = profileMap[profileKey] || profileMap.default;
 
-  const rootFolder = mediaType === 'movie' ? selectedProfile.movieRootFolder : selectedProfile.tvRootFolder;
+  const rootFolder = mediaType === 'movie' 
+    ? (selectedProfile.movieRootFolder || "") 
+    : (selectedProfile.tvRootFolder || "");
 
   interface RequestPayload {
     mediaType: string;
@@ -50,14 +52,14 @@ export async function requestMedia(intent: MediaIntent, mediaId: number): Promis
   const payload: RequestPayload = {
     mediaType,
     mediaId,
-    profileId: selectedProfile.profileId,
+    profileId: selectedProfile.profileId || 0,
     rootFolder,
     serverId: 0,
     languageProfileId: selectedProfile.languageProfileId,
   };
 
   if (mediaType === 'tv') {
-    payload.tvdbId = mediaId; // Assuming mediaId is tvdbId for TV shows
+    payload.tvdbId = mediaId;
     if (intent.seasons === 'all') {
       payload.seasons = 'all';
     } else if (Array.isArray(intent.seasons)) {
@@ -78,8 +80,8 @@ export async function requestMedia(intent: MediaIntent, mediaId: number): Promis
       throw new Error("Invalid response from Overseerr API");
     }
     return res.data;
-  } catch (err: any) {
-    console.error("❌ Error requesting media:", err.message);
+  } catch (err: unknown) {
+    console.error("❌ Error requesting media:", err instanceof Error ? err.message : String(err));
     throw new Error("Failed to request media");
   }
 } 
