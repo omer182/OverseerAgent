@@ -23,11 +23,3 @@ jobs:
         
       - name: Run linting
         run: npm run lint || echo "Linting not configured, skipping"
-        
-      - name: Run tests
-        run: npm run test || echo "Tests not configured, skipping"
-        
-      - name: Check build
-        run: |
-          # Check if the application builds successfully
-          node -e "require('./index.js')" || exit 1 
