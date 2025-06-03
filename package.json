@@ -1,24 +1,30 @@
 {
   "name": "mcp-claude-overseerr",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js --require dotenv/config",
-    "dev": "nodemon index.js --require dotenv/config -- inspect",
-    "lint": "eslint .",
+    "start": "node dist/index.js --require dotenv/config",
+    "build": "tsc --project tsconfig.json",
+    "dev": "nodemon --inspect",
+    "lint": "eslint \"src/**/*.{js,ts}\"",
     "test": "echo \"No tests specified yet\" && exit 0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.22.0",
     "@google/generative-ai": "^0.24.1",
-    "axios": "^1.6.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
+    "@hono/node-server": "^1.14.3",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "hono": "^4.7.10",
     "nodemon": "^3.1.10"
   },
   "devDependencies": {
+    "@types/node": "^22.15.24",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
     "eslint": "^8.56.0"
   }
 }
