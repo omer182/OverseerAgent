@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js --require dotenv/config",
-    "dev": "nodemon index.js --require dotenv/config",
+    "dev": "nodemon index.js --require dotenv/config -- inspect",
     "lint": "eslint .",
     "test": "echo \"No tests specified yet\" && exit 0"
   },

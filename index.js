@@ -62,7 +62,7 @@ async function searchOverseerr(title) {
       headers: overseerrHeaders,
     });
 
-    return res.data.results[0];
+    return res.data.results;
   } catch (err) {
     console.error("❌ Error searching Overseerr:", err);
     throw new Error("Failed to search Overseerr");
@@ -83,20 +83,20 @@ async function requestMedia(intent, mediaId) {
     languageProfileId: 1
   };
 
- // Handle TV show seasons
- if (mediaType === 'tv') {
-  payload.tvdbId = mediaId;
-  
-  if (intent.seasons === 'all') {
-    payload.seasons = 'all';
-  } else if (Array.isArray(intent.seasons)) {
-    payload.seasons = intent.seasons;
-  } else {
-    payload.seasons = [1]; // Default to season 1
+  // Handle TV show seasons
+  if (mediaType === 'tv') {
+    payload.tvdbId = mediaId;
+    
+    if (intent.seasons === 'all') {
+      payload.seasons = 'all';
+    } else if (Array.isArray(intent.seasons)) {
+      payload.seasons = intent.seasons;
+    } else {
+      payload.seasons = [1]; // Default to season 1
+    }
   }
-}
 
-  console.log("📦 Requesting media with payload:", payload);
+  console.log("📦 Requesting media...");
   try {
     const res = await axios.post(
       `${OVERSEERR_URL}/api/v1/request`,
@@ -137,13 +137,21 @@ app.post("/prompt", async (req, res) => {
     const intent = await extractMediaIntent(prompt);
     console.log("🎯 Extracted:", intent);
 
-    const result = await searchOverseerr(intent.title);
+    const searchResults = await searchOverseerr(intent.title);
+
+    if (searchResults.length === 0) {
+      return res.status(404).send("Sorry, I couldn't find that media.");
+    }
+
+  
+    const result = searchResults.find(r => (r.mediaType || r.media_type) === intent.mediaType);
+
+    if (!result) return res.status(404).send("Sorry, I couldn't find that media.");
 
     // Handle already requested/available
     if (result.mediaInfo && result.mediaInfo.status) {
       const status = result.mediaInfo.status;
 
-      // Fully available/requested (status 2, 3, etc. - adjust as needed)
       if (status !== 1 && status !== 4) {
         console.log("✅ Media already available/requested");
         return res.status(200).send(`"${intent.title}" is already available or has already been requested.`);
@@ -171,13 +179,12 @@ app.post("/prompt", async (req, res) => {
       }
     }
 
-    if (!result) return res.status(404).send("Sorry, I couldn't find that media.");
 
     const profileKey = intent.profile?.toLowerCase() || "default";
     const profileConfig = profileMap[profileKey] || profileMap.default;
 
-    const requested = await requestMedia(intent, result.id, profileConfig);
-    console.log("📥 Media requested successfully:", requested);
+    await requestMedia(intent, result.id, profileConfig);
+    console.log("📥 Media requested successfully");
 
     let message = "";
     if (intent.mediaType === "tv") {
