@@ -35,7 +35,7 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
    **For Google Gemini (recommended):**
    ```env
    LLM_PROVIDER=gemini
-   GEMINI_API_KEY=your_gemini_api_key
+   LLM_API_KEY=your_gemini_api_key
    OVERSEERR_API_KEY=your_overseerr_api_key
    OVERSEERR_URL=http://your_overseerr_instance
    ```
@@ -43,7 +43,7 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
    **For Anthropic Claude (uses Claude 3.7 Sonnet):**
    ```env
    LLM_PROVIDER=anthropic
-   ANTHROPIC_API_KEY=your_gemini_api_key
+   LLM_API_KEY=your_anthropic_api_key
    OVERSEERR_API_KEY=your_overseerr_api_key
    OVERSEERR_URL=http://your_overseerr_instance
    ```
@@ -87,13 +87,9 @@ You can easily deploy OverseerAgent using Docker Compose, which also works seaml
        environment:
          - OVERSEERR_URL=http://overseerr:5055 # Example: if overseerr is in the same stack
          - OVERSEERR_API_KEY=your_overseerr_api_key
-         # Choose ONE LLM Provider below and uncomment the relevant lines
-         # For Google Gemini (recommended)
-         - LLM_PROVIDER=gemini 
-         - GEMINI_API_KEY=your_gemini_api_key
-         # For Anthropic Claude (uses Claude 3.7 Sonnet)
-         # - LLM_PROVIDER=anthropic
-         # - ANTHROPIC_API_KEY=your_anthropic_api_key 
+         # Currently supports gemini and anthropic LLM providers
+         - LLM_PROVIDER=gemini/anthropic 
+         - LLM_API_KEY=your_llm_api_key
        restart: unless-stopped
    ```
 
