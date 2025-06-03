@@ -34,17 +34,10 @@ export async function requestMedia(intent: MediaIntent, mediaId: number): Promis
   const profileKey = intent.profile === "heb" ? "heb" : "default";
   const selectedProfile: ProfileConfig = profileMap[profileKey] || profileMap.default;
 
-  const rootFolder = mediaType === 'movie' 
-    ? (selectedProfile.movieRootFolder || "") 
-    : (selectedProfile.tvRootFolder || "");
-
   interface RequestPayload {
     mediaType: string;
     mediaId: number;
     profileId: number;
-    rootFolder: string;
-    serverId: number;
-    languageProfileId: number;
     tvdbId?: number;
     seasons?: "all" | number[];
   }
@@ -52,10 +45,7 @@ export async function requestMedia(intent: MediaIntent, mediaId: number): Promis
   const payload: RequestPayload = {
     mediaType,
     mediaId,
-    profileId: selectedProfile.profileId || 0,
-    rootFolder,
-    serverId: 0,
-    languageProfileId: selectedProfile.languageProfileId,
+    profileId: selectedProfile.profileId,
   };
 
   if (mediaType === 'tv') {
