@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/index.js --require dotenv/config",
     "build": "tsc --project tsconfig.json",
-    "dev": "nodemon",
+    "dev": "nodemon --inspect",
     "lint": "eslint \"src/**/*.{js,ts}\"",
     "test": "echo \"No tests specified yet\" && exit 0"
   },

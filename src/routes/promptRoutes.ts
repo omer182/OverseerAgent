@@ -9,16 +9,23 @@ router.post("/prompt", async (c) => {
     const { prompt } = await c.req.json<{ prompt: string }>();
 
     if (!prompt) {
-      return c.json({ error: "Prompt is required" }, 400);
+      return c.json({ message: "Prompt is required" }, 400);
     }
 
     const intent: MediaIntent = await extractMediaIntent(prompt);
     console.log("🎯 Extracted:", intent);
 
-    const result = await searchOverseerr(intent.title);
-    if (!result) {
-      return c.json({ error: "Media not found" }, 404);
+    const searchResults = await searchOverseerr(intent.title);
+
+
+    if (searchResults.length === 0) {
+      return c.json({ message: "Media not found" }, 404);
     }
+
+    const result = searchResults.find(r => (r.mediaType) === intent.mediaType);
+
+    if (!result) return c.json({ message: "Sorry, I couldn't find that media." }, 404);
+
 
     if (result.mediaInfo && result.mediaInfo.status) {
       const status = result.mediaInfo.status;
@@ -26,10 +33,7 @@ router.post("/prompt", async (c) => {
       // Other statuses (e.g., 2:Processing, 3:Available, 5:Unavailable) mean we don't need to request.
       if (status !== 1 && status !== 4) { 
         console.log("✅ Media already available/requested or processing");
-        return c.json({
-          status: "already_processed", // Generalized status
-          message: "This media is already processing, available, or has been requested.",
-        });
+        return c.json({ message: "This media is already processing, available, or has been requested." }, 200);
       }
 
       // If partially available, check if requested seasons are among the available ones
@@ -44,19 +48,17 @@ router.post("/prompt", async (c) => {
 
         if (missingSeasons.length === 0) {
           console.log("✅ All requested seasons are already available/requested or processing");
-          return c.json({
-            status: "already_processed",
-            message: "All requested seasons are already available, processing, or requested.",
-          });
+          return c.json({ message: "All requested seasons are already available/requested or processing." }, 200);
         }
         // Update intent to only request missing seasons
         intent.seasons = missingSeasons;
       }
     }
 
-    const requested = await requestMedia(intent, result.id);
-    console.log("📥 Media requested successfully:", requested);
-    return c.json({ status: "success", intent });
+    await requestMedia(intent, result.id);
+    console.log("📥 Media requested successfully");
+
+    return c.json({ message: "Media requested successfully." }, 200);
   } catch (err: unknown) {
     console.error("❌ Prompt Route Error:", err instanceof Error ? err.message : String(err));
     // Check if the error is from one of our services and rethrow if it's a specific message
@@ -64,10 +66,10 @@ router.post("/prompt", async (c) => {
       if (err.message === "Failed to extract media intent" || 
           err.message === "Failed to search Overseerr" || 
           err.message === "Failed to request media") {
-        return c.json({ error: err.message }, 500); 
+        return c.json({ message: err.message }, 500); 
       }
     }
-    return c.json({ error: "Server failed to process prompt" }, 500);
+    return c.json({ message: "Server failed to process prompt" }, 500);
   }
 });
 

@@ -4,25 +4,26 @@ import { MediaIntent } from './mediaIntentService.js'; // Assuming MediaIntent w
 
 export interface OverseerrSearchResult {
   id: number;
+  mediaType?: string;
   mediaInfo?: {
     status?: number;
     seasons?: { seasonNumber: number; status?: number }[];
   };
-}
+}[]
 
 const overseerrHeaders = {
   "X-Api-Key": OVERSEERR_API_KEY!,
   "Content-Type": "application/json",
 };
 
-export async function searchOverseerr(title: string): Promise<OverseerrSearchResult | undefined> {
+export async function searchOverseerr(title: string): Promise<OverseerrSearchResult[]> {
   try {
     console.log("🔍 Searching Overseerr for:", title);
     const res = await axios.get(`${OVERSEERR_URL}/api/v1/search`, {
       params: { query: encodeURIComponent(title) },
       headers: overseerrHeaders,
     });
-    return res.data.results[0] as OverseerrSearchResult | undefined;
+    return res.data.results as OverseerrSearchResult[];
   } catch (err: unknown) {
     console.error("❌ Error searching Overseerr:", err instanceof Error ? err.message : String(err));
     throw new Error("Failed to search Overseerr");
