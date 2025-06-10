@@ -12,11 +12,12 @@ router.post("/prompt", async (c) => {
       return c.json({ message: "Prompt is required" }, 400);
     }
 
+    console.log("📝 Received prompt:", prompt);
+
     const intent: MediaIntent = await extractMediaIntent(prompt);
     console.log("🎯 Extracted:", intent);
 
     const searchResults = await searchOverseerr(intent.title);
-
 
     if (searchResults.length === 0) {
       return c.json({ message: "Media not found" }, 404);
