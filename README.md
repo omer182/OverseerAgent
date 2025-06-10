@@ -98,6 +98,43 @@ You can easily deploy OverseerAgent using Docker Compose, which also works seaml
 
 Your OverseerAgent API will be available at `http://<your-server>:4000`.
 
+## Using Siri Shortcuts to Call Overseer Agent
+
+You can create a Siri Shortcut to request media using your voice. Here’s how:
+
+1. **Ask for Text**
+   - Action: *Ask for Input*
+   - Prompt: “What do you want to download?”
+   - Store the result as `Prompt`
+
+2. **Get Contents of URL**
+   - Action: *Get Contents of URL*
+   - Method: `POST`
+   - URL: `http://<your-server>:4000/prompt`
+   - Request Body: `JSON`
+     - Add a field:
+       - Key: `prompt`
+       - Value: `Prompt` (the variable from step 1)
+   - Headers:
+     - Key: `Content-Type`
+     - Value: `application/json`
+   - Store the result as `Response`
+
+3. **Get Dictionary Value**
+   - Action: *Get Dictionary Value*
+   - Get the value for key: `message` from `Response`
+
+4. **Speak Text**
+   - Action: *Speak Text*
+   - Speak the value from step 3
+
+**How it works:**  
+- Siri will ask what you want to download.
+- It will send your request to Overseer Agent.
+- It will read out the response message.
+
+You can now trigger this shortcut by saying, “Hey Siri, [your shortcut name]”.
+
 ## License
 
-Created by Omer Sher aka Rio.
+Created by Omer S. aka Rio.
