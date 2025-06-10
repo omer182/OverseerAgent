@@ -56,7 +56,7 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
 
 ## Usage
 
-Send a POST request to `/prompt` with a JSON body containing your prompt.
+Send a POST request to `/api/prompt` with a JSON body containing your prompt.
 
 
 ```json
@@ -110,7 +110,7 @@ You can create a Siri Shortcut to request media using your voice. Here’s how:
 2. **Get Contents of URL**
    - Action: *Get Contents of URL*
    - Method: `POST`
-   - URL: `http://<your-server>:4000/prompt`
+   - URL: `http://<your-server>:4000/api/prompt`
    - Request Body: `JSON`
      - Add a field:
        - Key: `prompt`
