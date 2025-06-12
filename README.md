@@ -49,10 +49,14 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
    ```
 4. **Run the server:**
    ```sh
+   npm run build
+   ```
+   ```sh
    npm start
    ```
 5. **Access the API:**
    Open your browser and go to `http://localhost::4000`
+
 
 ## Usage
 
@@ -104,7 +108,7 @@ You can create a Siri Shortcut to request media using your voice. Here’s how:
 
 1. **Ask for Text**
    - Action: *Ask for Input*
-   - Prompt: “What do you want to download?”
+   - Prompt: `What do you want to download?`
    - Store the result as `Prompt`
 
 2. **Get Contents of URL**
@@ -133,8 +137,14 @@ You can create a Siri Shortcut to request media using your voice. Here’s how:
 - It will send your request to Overseer Agent.
 - It will read out the response message.
 
-You can now trigger this shortcut by saying, “Hey Siri, [your shortcut name]”.
+You can trigger this shortcut by saying, “Hey Siri, [your shortcut name]”.
 
 ## License
+Free to use for any purpose.
+
+## Credits
 
 Created by Omer S. aka Rio.
+
+**Contributors:**  
+- [kobik](https://github.com/kobik)
