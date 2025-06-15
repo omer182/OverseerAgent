@@ -1,6 +1,6 @@
 // llm/index.ts
 import { OpenAiClient } from "./Openai.js";
-import { AnthropicClient } from "./Claude.js";
+import { AnthropicClient } from "./Anthropic.js";
 import { GeminiClient } from "./Gemini.js";
 import { LiteLlmClient } from "./Litellm.js";
 import { OllamaClient } from "./Ollama.js";

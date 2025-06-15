@@ -4,7 +4,6 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
 
 ## ⚠️ Breaking Changes
 
-**Breaking Change**
 - **Default port changed from `3000` to `4321`**
   - Docker Compose: Change port mapping from `3000:3000` to `4321:4321`
   - Environment variables: Set `PORT=4321` or update your reverse proxy/firewall rules
