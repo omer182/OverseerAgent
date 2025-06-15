@@ -35,7 +35,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
 # Expose the port your app runs on
-EXPOSE 4000
+EXPOSE 4321
 
 # Start the app
 CMD ["node", "dist/index.js"]

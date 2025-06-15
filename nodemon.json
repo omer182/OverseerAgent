@@ -1,5 +1,5 @@
 {
-  "watch": ["src"],
+  "watch": ["src", ".env"],
   "ext": "ts,json",
   "ignore": ["src/**/*.spec.ts", "node_modules"],
   "exec": "npx tsx --require dotenv/config --inspect src/index.ts",

@@ -2,21 +2,32 @@
 
 OverseerAgent is a Node.js server that uses AI for natural language understanding and integrates with [Overseerr](https://overseerr.dev/) to request your favorite movies or TV shows using simple prompts.
 
+## ⚠️ Breaking Changes
+
+**Breaking Change**
+- **Default port changed from `3000` to `4321`**
+  - Docker Compose: Change port mapping from `3000:3000` to `4321:4321`
+  - Environment variables: Set `PORT=4321` or update your reverse proxy/firewall rules
+  - API calls: Update URLs from `http://localhost:3000` to `http://localhost:4321`
+
 ## Features
 
 - Accepts natural language prompts to request movies or TV shows
-- Uses configurable AI models (Google Gemini, Anthropic Claude) to extract intent and media details
+- Uses configurable AI models (Google Gemini, Anthropic Claude, OpenAI, LiteLLM, Ollama) to extract intent and media details
 - Searches and requests media via Overseerr API
 - Supports custom profiles (e.g., Hebrew content)
 - Docker-ready and easy to deploy
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - Access to [Overseerr](https://overseerr.dev/) instance and API key
 - Access to a supported AI provider:
-  - [Google Gemini API](https://ai.google.dev/) (e.g., Gemini 2.5 Pro)
-  - [Anthropic Claude API](https://docs.anthropic.com/claude/reference/getting-started) (specifically Claude 3.7 Sonnet when `LLM_PROVIDER=anthropic`)
+  - [Google Gemini API](https://ai.google.dev/) (e.g., Gemini 2.5 Flash)
+  - [Anthropic Claude API](https://docs.anthropic.com/claude/reference/getting-started) (specifically Claude 4 Sonnet when `LLM_PROVIDER=anthropic`)
+  - [OpenAI API](https://platform.openai.com/) (e.g., GPT-4o-mini when `LLM_PROVIDER=openai`)
+  - [LiteLLM](https://docs.litellm.ai/) (proxy for multiple providers when `LLM_PROVIDER=litellm`)
+  - [Ollama](https://ollama.ai/) (local LLM runner when `LLM_PROVIDER=ollama`)
 
 ## Setup
 
@@ -32,21 +43,80 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
 3. **Configure environment variables:**
    Create a `.env` file and update the values:
    
+   ## Environment Variables
+
+Here's a complete reference of all environment variables used by OverseerAgent:
+
+### Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `LLM_PROVIDER` | AI provider to use | `gemini`, `anthropic`, `openai`, `litellm`, `ollama` |
+| `LLM_API_KEY` | API key for your chosen LLM provider | `your_api_key_here` |
+| `OVERSEERR_API_KEY` | API key from your Overseerr instance | `your_overseerr_api_key` |
+| `OVERSEERR_URL` | URL to your Overseerr instance | `http://localhost:5055` |
+
+### Optional Variables
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `LLM_MODEL` | Specific model to use with your provider | Provider default | `gpt-4o-mini`, `claude-sonnet-4-20250514` |
+| `LLM_BASE_URL` | Custom base URL for LiteLLM/Ollama | `http://localhost:4000` (LiteLLM)<br/>`http://localhost:11434` (Ollama) | `http://your-litellm-server:4000` |
+| `PORT` | Port for the OverseerAgent server | `4321` | `4321` |
+
+### Provider-Specific Notes
+
+- **Gemini/Anthropic/OpenAI**: Only require `LLM_API_KEY`
+- **LiteLLM**: May not require `LLM_API_KEY` depending on your proxy setup
+- **Ollama**: Doesn't require `LLM_API_KEY` (runs locally)
+- **LiteLLM/Ollama**: Use `LLM_BASE_URL` to specify custom server locations
+   
    **For Google Gemini (recommended):**
    ```env
    LLM_PROVIDER=gemini
    LLM_API_KEY=your_gemini_api_key
+   LLM_MODEL=gemini-2.0-flash-exp  # Optional, uses default if not specified
    OVERSEERR_API_KEY=your_overseerr_api_key
    OVERSEERR_URL=http://your_overseerr_instance
    ```
    
-   **For Anthropic Claude (uses Claude 3.7 Sonnet):**
+   **For Anthropic Claude:**
    ```env
    LLM_PROVIDER=anthropic
    LLM_API_KEY=your_anthropic_api_key
+   LLM_MODEL=claude-3-5-sonnet-20241022  # Optional, uses default if not specified
    OVERSEERR_API_KEY=your_overseerr_api_key
    OVERSEERR_URL=http://your_overseerr_instance
    ```
+   
+   **For OpenAI:**
+   ```env
+   LLM_PROVIDER=openai
+   LLM_API_KEY=your_openai_api_key
+   LLM_MODEL=gpt-4o-mini  # Optional, uses default if not specified
+   OVERSEERR_API_KEY=your_overseerr_api_key
+   OVERSEERR_URL=http://your_overseerr_instance
+   ```
+   
+   **For LiteLLM (proxy for multiple providers):**
+   ```env
+   LLM_PROVIDER=litellm
+   LLM_API_KEY=your_api_key  # Optional, depends on your LiteLLM setup
+   LLM_BASE_URL=http://localhost:4000  # Your LiteLLM proxy URL
+   LLM_MODEL=gpt-4o-mini  # Or any model supported by your LiteLLM instance
+   OVERSEERR_API_KEY=your_overseerr_api_key
+   OVERSEERR_URL=http://your_overseerr_instance
+   ```
+   
+   **For Ollama (local LLM runner):**
+   ```env
+   LLM_PROVIDER=ollama
+   LLM_BASE_URL=http://localhost:11434  # Your Ollama server URL
+   LLM_MODEL=llama3.2  # Or any model you have installed in Ollama
+   OVERSEERR_API_KEY=your_overseerr_api_key
+   OVERSEERR_URL=http://your_overseerr_instance
+   ```
+
 4. **Run the server:**
    ```sh
    npm run build
@@ -55,7 +125,7 @@ OverseerAgent is a Node.js server that uses AI for natural language understandin
    npm start
    ```
 5. **Access the API:**
-   Open your browser and go to `http://localhost::4000`
+   Call the API `http://localhost:4321/api/prompt`
 
 
 ## Usage
@@ -74,6 +144,25 @@ Some other prompt examples:
 - "download Aladdin in hebrew"
 - "download the latest season of solo leveling"
 
+### Media Profiles
+
+OverseerAgent automatically selects the appropriate media profile based on your prompt:
+
+**Quality Examples:**
+- `"download Breaking Bad in 4K"` → Selects 4K profile
+- `"I want The Matrix in HD"` → Selects HD/1080p profile
+- `"get Dune in Dolby Vision"` → Selects Dolby Vision profile
+
+**Language Examples:**
+- `"download Aladdin in Hebrew"` → Selects Hebrew profile
+- `"I need the Hebrew movie Lebanon"` → Selects Hebrew profile
+
+**Default Examples:**
+- `"download Breaking Bad"` → Uses standard/default profile
+- `"add all seasons of Friends"` → Uses standard/default profile
+
+The AI analyzes your prompt and matches it with available profiles configured in your Radarr and Sonarr instances (accessible through Overseerr).
+
 ## Docker Compose / Portainer
 
 You can easily deploy OverseerAgent using Docker Compose, which also works seamlessly with Portainer.
@@ -87,20 +176,21 @@ You can easily deploy OverseerAgent using Docker Compose, which also works seaml
        image: ghcr.io/omer182/overseeragent:latest # Or your custom built image
        container_name: overseeragent
        ports:
-         - 4000:4000
+         - 4321:4321
        environment:
          - OVERSEERR_URL=http://overseerr:5055 # Example: if overseerr is in the same stack
          - OVERSEERR_API_KEY=your_overseerr_api_key
-         # Currently supports gemini and anthropic LLM providers
-         - LLM_PROVIDER=gemini/anthropic 
+         # Currently supports gemini, anthropic, openai, litellm, and ollama LLM providers
+         - LLM_PROVIDER=gemini/anthropic/openai/litellm/ollama 
          - LLM_API_KEY=your_llm_api_key
+         - LLM_MODEL=your_llm_model
        restart: unless-stopped
    ```
 
    - Replace the environment variable values with your actual secrets.
    - If you run Overseerr in the same stack, use the service name (`overseerr`) for `OVERSEERR_URL`.
 
-Your OverseerAgent API will be available at `http://<your-server>:4000`.
+Your OverseerAgent API will be available at `http://<your-server>:4321`.
 
 ## Using Siri Shortcuts to Call Overseer Agent
 
@@ -114,7 +204,7 @@ You can create a Siri Shortcut to request media using your voice. Here’s how:
 2. **Get Contents of URL**
    - Action: *Get Contents of URL*
    - Method: `POST`
-   - URL: `http://<your-server>:4000/api/prompt`
+   - URL: `http://<your-server>:4321/api/prompt`
    - Request Body: `JSON`
      - Add a field:
        - Key: `prompt`
