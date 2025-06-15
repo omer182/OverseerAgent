@@ -1,5 +1,3 @@
-import z from "zod/v4";
-
 import { LlmClient } from "../llm/types.js";
 import { ProfileModel } from "../../types/overseerr.js";
 import { 
@@ -9,6 +7,7 @@ import {
   MediaRequestParamsSchema,
   MediaSelectionParamsSchema
 } from "./types.js";
+import { validateJsonWithSchema } from "../validation/index.js";
 
 
 export class LlmService {
@@ -39,7 +38,13 @@ export class LlmService {
       messages: [{ role: "user", content: userMessage }],
     });
 
-    return parseJson<MediaRequestParams>(response.final_response, MediaRequestParamsSchema);
+    const result = validateJsonWithSchema<MediaRequestParams>(MediaRequestParamsSchema, response.final_response);
+    if (result.success) {
+      return result.data;
+    } else {
+      console.error(`❌ Failed to extract media request from llm response: ${result.error.message}`);
+      throw new Error("Failed to extract media request from llm response");
+    }
   }
 
   private MEDIA_SELECTION_PROMPT = `You're an assistant that selects the best media and media profile from a list of search results according to the user's request.
@@ -68,25 +73,12 @@ Return ONLY the JSON without any markdown formatting.`;
       }],
     });
 
-    return parseJson<MediaSelectionParams>(response.final_response, MediaSelectionParamsSchema);
+    const result = validateJsonWithSchema<MediaSelectionParams>(MediaSelectionParamsSchema, response.final_response);
+    if (result.success) {
+      return result.data;
+    } else {
+      console.error(`❌ Failed to select media from llm response: ${result.error.message}`);
+      throw new Error("Failed to select media from llm response");
+    }
   }
 } 
-
-function parseJson<T>(json: string, schema: z.ZodSchema<T>): T {
-  try {
-    const parsed = JSON.parse(json);
-    const result = schema.safeParse(parsed);
-    if (!result.success) {
-      result.error.issues.forEach((issue) => {
-        console.error(`❌ Response validation error: body.${issue.path.join('.')}: ${issue.message}`);
-      });
-      throw new Error(`Failed to validate response: ${json}`);
-    }
-    return result.data;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to parse response: ${error.message}. Original response: ${json}`);
-    }
-    throw new Error(`Failed to parse response: Unknown error. Original response: ${json}`);
-  }
-}

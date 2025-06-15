@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { Result, success, failure } from '../../types/result.js';
 
 /**
@@ -32,7 +32,9 @@ export function validateJsonWithSchema<T>(
     if (validation.success) {
       return success(validation.data);
     } else {
-      return failure(new Error(`Validation failed: ${validation.error.message}`));
+      const errorMessage = validation.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+      
+      return failure(new Error(`Validation failed: ${errorMessage}`));
     }
   } catch (error) {
     return failure(new Error(`Invalid JSON: ${error instanceof Error ? error.message : String(error)}`));
@@ -49,9 +51,7 @@ export function createValidationMiddleware<T>(schema: z.ZodSchema<T>) {
     if (validation.success) {
       return success(validation.data);
     } else {
-      const errorMessage = validation.error.errors
-        .map(err => `${err.path.join('.')}: ${err.message}`)
-        .join(', ');
+      const errorMessage = validation.error.issues.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
       
       return failure(new Error(`Validation failed: ${errorMessage}`));
     }
