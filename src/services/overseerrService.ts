@@ -9,7 +9,7 @@ export interface OverseerrSearchResult {
     status?: number;
     seasons?: { seasonNumber: number; status?: number }[];
   };
-}[]
+}
 
 const overseerrHeaders = {
   "X-Api-Key": OVERSEERR_API_KEY!,

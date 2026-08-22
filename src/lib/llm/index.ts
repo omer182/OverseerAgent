@@ -39,13 +39,12 @@ export function createProvider(provider: string, apiKey: string): ModelProvider 
  */
 export async function invokeChatModel(userPrompt: string): Promise<MediaIntent> {
   const providerName = process.env.LLM_PROVIDER?.toLowerCase();
-  let apiKey: string | undefined;
 
   if (!providerName) {
     throw new Error("LLM_PROVIDER environment variable is not set or is empty.");
   }
 
-  apiKey = process.env.LLM_API_KEY;
+  const apiKey = process.env.LLM_API_KEY;
 
   if (!apiKey) {
     // This check is technically redundant if validateLLMConfig has run, but good for safety.

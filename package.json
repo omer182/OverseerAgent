@@ -11,7 +11,7 @@
     "test": "echo \"No tests specified yet\" && exit 0"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.22.0",
+    "@anthropic-ai/sdk": "^0.120.0",
     "@google/generative-ai": "^0.24.1",
     "@hono/node-server": "^1.14.3",
     "axios": "^1.9.0",
