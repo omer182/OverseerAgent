@@ -27,7 +27,7 @@ jobs:
           git config user.email "omer182@gmail.com"
           # Bump outdated npm packages (minor, falling back to patch), keep only bumps that
           # don't break any check that passed before, and commit as the repo owner.
-          set -uo pipefail
+          set +e -uo pipefail  # Actions runs bash -e; failures are handled explicitly
 
           CHECKS=(typecheck build test)
           mapfile -t DIRS < <(git ls-files 'package.json' '*/package.json' | xargs -rn1 dirname | sort -u)
