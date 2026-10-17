@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency: deps-update
 
@@ -22,6 +23,8 @@ jobs:
       - name: Bump outdated packages and push
         env:
           CI: 'true'
+          GH_TOKEN: ${{ github.token }}
+          PR_MODE: '1'
         run: |
           git config user.name "omer182"
           git config user.email "omer182@gmail.com"
@@ -101,4 +104,16 @@ jobs:
           git commit -q -m "chore(deps): bump $applied versions ($(date -u +%F))" -m "$(cat /tmp/changes.txt)"
           git log -1 --stat
           [ "${DRY_RUN:-}" = 1 ] && { echo "DRY_RUN: not pushing"; exit 0; }
-          git push
+          if [ "${PR_MODE:-}" = 1 ]; then
+            # Protected main: put today's bumps on one rolling branch and keep a single PR open for review.
+            branch=deps/auto-update
+            git push -f origin "HEAD:refs/heads/$branch"
+            if [ -z "$(gh pr list --head "$branch" --state open --json number --jq '.[].number')" ]; then
+              body=$(printf 'Automated daily bump; every check that passed before still passes.\n\n%s\n' "$(sed 's/^/- /' /tmp/changes.txt)")
+              gh pr create --head "$branch" --base "$GITHUB_REF_NAME" --title "chore(deps): bump $applied versions" --body "$body"
+            else
+              echo "Updated the open PR on $branch"
+            fi
+          else
+            git push
+          fi
