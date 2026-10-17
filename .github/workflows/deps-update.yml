@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Bump outdated packages and push
@@ -39,7 +39,8 @@ jobs:
               if [ -f "$d/package-lock.json" ] && [ "${1:-}" = ci ]; then
                 (cd "$d" && npm ci --no-audit --no-fund) || return 1
               else
-                (cd "$d" && npm install --no-audit --no-fund) || return 1
+                # A stale lockfile can pin peers (e.g. typescript-eslint) and block the bump; regenerate it once.
+                (cd "$d" && { npm install --no-audit --no-fund || { rm -rf node_modules package-lock.json && npm install --no-audit --no-fund; }; }) || return 1
               fi
             done
           }
