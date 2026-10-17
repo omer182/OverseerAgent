@@ -1,0 +1,103 @@
+name: Daily dependency update
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: deps-update
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bump outdated packages and push
+        env:
+          CI: 'true'
+        run: |
+          git config user.name "omer182"
+          git config user.email "omer182@gmail.com"
+          # Bump outdated npm packages (minor, falling back to patch), keep only bumps that
+          # don't break any check that passed before, and commit as the repo owner.
+          set -uo pipefail
+
+          CHECKS=(typecheck build test)
+          mapfile -t DIRS < <(git ls-files 'package.json' '*/package.json' | xargs -rn1 dirname | sort -u)
+          [ ${#DIRS[@]} -eq 0 ] && { echo "No package.json found"; exit 0; }
+          echo "Package dirs: ${DIRS[*]}"
+
+          install_all() {
+            for d in "${DIRS[@]}"; do
+              if [ -f "$d/package-lock.json" ] && [ "${1:-}" = ci ]; then
+                (cd "$d" && npm ci --no-audit --no-fund) || return 1
+              else
+                (cd "$d" && npm install --no-audit --no-fund) || return 1
+              fi
+            done
+          }
+
+          # Prints "dir:script" for every check that currently passes.
+          passing_checks() {
+            for d in "${DIRS[@]}"; do
+              for s in "${CHECKS[@]}"; do
+                (cd "$d" && node -e "process.exit(require('./package.json').scripts?.['$s'] ? 0 : 1)") || continue
+                if (cd "$d" && npm run "$s" >/dev/null 2>&1); then echo "$d:$s"; fi
+              done
+            done
+          }
+
+          echo "::group::Baseline install + checks"
+          install_all ci || { echo "::error::Baseline install failed"; exit 1; }
+          mapfile -t BASELINE < <(passing_checks)
+          echo "Checks passing before update: ${BASELINE[*]:-none}"
+          echo "::endgroup::"
+
+          : > /tmp/changes.txt
+          try_target() {
+            local target=$1
+            git reset -q --hard
+            : > /tmp/changes.txt
+            for d in "${DIRS[@]}"; do
+              out=$(cd "$d" && npx -y npm-check-updates@17 -u --target "$target" --format lines 2>/dev/null) || return 1
+              (cd "$d" && git diff --quiet -- package.json) && continue
+              git diff -U0 -- "$d/package.json" | grep -E '^\+\s+"' | sed -E "s|^\+\s+|$d: |; s|,$||" >> /tmp/changes.txt
+            done
+            [ -s /tmp/changes.txt ] || { echo "Nothing outdated at $target level"; return 2; }
+            echo "Bumps ($target):"; cat /tmp/changes.txt
+            install_all || { echo "::warning::npm install failed after $target bumps"; return 1; }
+            mapfile -t AFTER < <(passing_checks)
+            for c in "${BASELINE[@]}"; do
+              printf '%s\n' "${AFTER[@]}" | grep -qxF "$c" || { echo "::warning::$c broke after $target bumps"; return 1; }
+            done
+            return 0
+          }
+
+          for target in minor patch; do
+            echo "::group::Trying $target"
+            try_target "$target"; rc=$?
+            echo "::endgroup::"
+            case $rc in
+              0) applied=$target; break ;;
+              2) [ "$target" = minor ] && { echo "Up to date."; exit 0; } ;;
+            esac
+          done
+
+          if [ -z "${applied:-}" ]; then
+            git reset -q --hard
+            echo "::warning::No safe update today (bumps broke checks)."
+            exit 0
+          fi
+
+          git add -u
+          git commit -q -m "chore(deps): bump $applied versions ($(date -u +%F))" -m "$(cat /tmp/changes.txt)"
+          git log -1 --stat
+          [ "${DRY_RUN:-}" = 1 ] && { echo "DRY_RUN: not pushing"; exit 0; }
+          git push
