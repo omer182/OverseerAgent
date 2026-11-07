@@ -13,10 +13,10 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.137.0",
     "@google/generative-ai": "^0.24.1",
-    "@hono/node-server": "^1.19.17",
+    "@hono/node-server": "^1.19.18",
     "axios": "^1.21.0",
     "dotenv": "^16.6.1",
-    "hono": "^4.13.14",
+    "hono": "^4.13.17",
     "nodemon": "^3.1.14"
   },
   "devDependencies": {
