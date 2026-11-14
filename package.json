@@ -13,16 +13,16 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.137.0",
     "@google/generative-ai": "^0.24.1",
-    "@hono/node-server": "^1.19.17",
-    "axios": "^1.21.0",
+    "@hono/node-server": "^1.19.19",
+    "axios": "^1.21.1",
     "dotenv": "^16.6.1",
-    "hono": "^4.13.14",
+    "hono": "^4.13.18",
     "nodemon": "^3.1.14"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
-    "@typescript-eslint/eslint-plugin": "^8.72.1",
-    "@typescript-eslint/parser": "^8.72.1",
+    "@typescript-eslint/eslint-plugin": "^8.72.2",
+    "@typescript-eslint/parser": "^8.72.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "eslint": "^8.57.1"
